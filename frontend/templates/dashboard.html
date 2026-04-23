@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — LibraryPro{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ─── STAT CARDS ─── -->
+<div class="stats-grid">
+
+  <div class="stat-card" style="--accent:#6366f1">
+    <div class="stat-icon" style="background:rgba(99,102,241,.15)">
+      <i class="fas fa-book" style="color:#6366f1"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">Total Books</span>
+      <span class="stat-value count-up" data-target="{{ total }}">0</span>
+    </div>
+    <div class="stat-trend up"><i class="fas fa-arrow-trend-up"></i> Library</div>
+  </div>
+
+  <div class="stat-card" style="--accent:#f59e0b">
+    <div class="stat-icon" style="background:rgba(245,158,11,.15)">
+      <i class="fas fa-bookmark" style="color:#f59e0b"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">Issued Books</span>
+      <span class="stat-value count-up" data-target="{{ issued }}">0</span>
+    </div>
+    <div class="stat-trend">Currently out</div>
+  </div>
+
+  <div class="stat-card" style="--accent:#10b981">
+    <div class="stat-icon" style="background:rgba(16,185,129,.15)">
+      <i class="fas fa-circle-check" style="color:#10b981"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">Available</span>
+      <span class="stat-value count-up" data-target="{{ available }}">0</span>
+    </div>
+    <div class="stat-trend up"><i class="fas fa-arrow-trend-up"></i> On shelves</div>
+  </div>
+
+  <div class="stat-card" style="--accent:#8b5cf6">
+    <div class="stat-icon" style="background:rgba(139,92,246,.15)">
+      <i class="fas fa-list-ol" style="color:#8b5cf6"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">In Queue</span>
+      <span class="stat-value count-up" data-target="{{ queue_count }}">0</span>
+    </div>
+    <div class="stat-trend">Waiting list</div>
+  </div>
+
+</div>
+
+<!-- ─── CHARTS ROW ─── -->
+<div class="two-col-grid mt-4">
+
+  <!-- Issues over time -->
+  <div class="card-pro">
+    <div class="card-pro-header">
+      <span><i class="fas fa-chart-line me-2 text-primary"></i>Issues This Week</span>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="weeklyChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Category pie -->
+  <div class="card-pro">
+    <div class="card-pro-header">
+      <span><i class="fas fa-chart-pie me-2 text-success"></i>Books by Category</span>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── QUICK ACTIONS + RECENT TX ─── -->
+<div class="two-col-grid mt-4">
+
+  <!-- Quick Actions -->
+  <div class="card-pro">
+    <div class="card-pro-header">
+      <span><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</span>
+    </div>
+    <div class="quick-actions">
+      <a href="{{ url_for('books') }}" class="qa-btn">
+        <i class="fas fa-plus-circle"></i>
+        <span>Add Book</span>
+      </a>
+      <a href="{{ url_for('issue_book') }}" class="qa-btn">
+        <i class="fas fa-arrow-right-from-bracket"></i>
+        <span>Issue Book</span>
+      </a>
+      <a href="{{ url_for('return_book') }}" class="qa-btn">
+        <i class="fas fa-rotate-left"></i>
+        <span>Return Book</span>
+      </a>
+      <a href="{{ url_for('queue_page') }}" class="qa-btn">
+        <i class="fas fa-layer-group"></i>
+        <span>View Queue</span>
+      </a>
+      {% if session.role == 'admin' %}
+      <a href="{{ url_for('analytics') }}" class="qa-btn">
+        <i class="fas fa-chart-bar"></i>
+        <span>Analytics</span>
+      </a>
+      <a href="{{ url_for('students') }}" class="qa-btn">
+        <i class="fas fa-users"></i>
+        <span>Students</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="card-pro">
+    <div class="card-pro-header">
+      <span><i class="fas fa-receipt me-2 text-info"></i>Recent Transactions</span>
+      <a href="{{ url_for('transactions') }}" class="btn-link-sm">View all</a>
+    </div>
+    {% if recent_tx %}
+    <div class="table-responsive">
+      <table class="table-pro">
+        <thead>
+          <tr><th>Book</th><th>Student</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for tx in recent_tx %}
+          <tr>
+            <td><span class="text-clip">{{ tx.book_title }}</span></td>
+            <td>{{ tx.student_name }}</td>
+            <td>
+              <span class="badge-status {{ tx.status }}">{{ tx.status|capitalize }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty-state small-empty">
+        <i class="fas fa-inbox"></i>
+        <p>No recent transactions</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- ─── BOOKS TABLE ─── -->
+<div class="card-pro mt-4">
+  <div class="card-pro-header">
+    <span><i class="fas fa-table me-2 text-secondary"></i>Books Catalog
+      <span class="badge bg-secondary ms-2">{{ total }}</span>
+    </span>
+    <a href="{{ url_for('books') }}" class="btn-link-sm">Manage books →</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table-pro">
+      <thead>
+        <tr>
+          <th>ID</th><th>Title</th><th>Author</th>
+          <th>Category</th><th>Status</th><th>Due Date</th><th>Fine</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for book in books[:10] %}
+        <tr>
+          <td><code>#{{ book.id }}</code></td>
+          <td>
+            <strong>{{ book.title }}</strong>
+            {% if book.vip %}<span class="badge-role vip ms-1">VIP</span>{% endif %}
+          </td>
+          <td class="text-muted">{{ book.author }}</td>
+          <td><span class="cat-chip">{{ book.category }}</span></td>
+          <td>
+            {% if book.issued %}
+              <span class="badge-status active">Issued</span>
+              <br><small class="text-muted">{{ book.student_name }}</small>
+            {% else %}
+              <span class="badge-status returned">Available</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if book.issued and book.due_date != '-' %}
+              <span class="{% if book.fine > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">
+                {{ book.due_date }}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if book.fine > 0 %}
+              <span class="text-danger fw-bold">₹{{ "%.2f"|format(book.fine) }}</span>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Fetch stats from API and render charts ──
+fetch('/api/stats')
+  .then(r => r.json())
+  .then(data => {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#9ca3af' : '#6b7280';
+
+    // Weekly chart
+    const days  = data.daily.map(d => d.day);
+    const cnts  = data.daily.map(d => d.cnt);
+    new Chart(document.getElementById('weeklyChart'), {
+      type: 'line',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Books Issued',
+          data: cnts,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,.12)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#6366f1',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: textColor } },
+          y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1 } }
+        }
+      }
+    });
+
+    // Category pie
+    const catLabels = data.cats.map(c => c.cat);
+    const catCnts   = data.cats.map(c => c.cnt);
+    const palette   = ['#6366f1','#f59e0b','#10b981','#3b82f6','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+    new Chart(document.getElementById('categoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: catLabels,
+        datasets: [{
+          data: catCnts,
+          backgroundColor: palette,
+          borderWidth: 2,
+          borderColor: isDark ? '#1e293b' : '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { color: textColor, padding: 12, font: { size: 12 } } }
+        }
+      }
+    });
+  })
+  .catch(() => {
+    // If no MySQL data yet, render empty chart gracefully
+    ['weeklyChart','categoryChart'].forEach(id => {
+      const ctx = document.getElementById(id);
+      if (ctx) {
+        ctx.parentElement.innerHTML = '<div class="empty-state small-empty"><i class="fas fa-chart-bar"></i><p>Connect MySQL to see charts</p></div>';
+      }
+    });
+  });
+</script>
+{% endblock %}

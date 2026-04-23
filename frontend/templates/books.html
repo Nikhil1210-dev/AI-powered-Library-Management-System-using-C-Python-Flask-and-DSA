@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Books — LibraryPro{% endblock %}
+{% block page_title %}Books Catalog{% endblock %}
+
+{% block content %}
+
+<!-- ─── ADD BOOK FORM (Admin only) ─── -->
+{% if session.role == 'admin' %}
+<div class="card-pro mb-4">
+  <div class="card-pro-header">
+    <span><i class="fas fa-plus-circle me-2 text-success"></i>Add New Book</span>
+    <button class="btn-icon" data-bs-toggle="collapse" data-bs-target="#addBookForm">
+      <i class="fas fa-chevron-down"></i>
+    </button>
+  </div>
+  <div class="collapse show" id="addBookForm">
+    <form action="{{ url_for('add_book') }}" method="POST" class="inline-form">
+      <div class="form-row-5">
+        <div>
+          <label class="form-label-sm">Book ID</label>
+          <input type="number" name="book_id" class="form-input-sm" placeholder="e.g. 101" required/>
+        </div>
+        <div>
+          <label class="form-label-sm">Title</label>
+          <input type="text" name="title" class="form-input-sm" placeholder="Book title" required/>
+        </div>
+        <div>
+          <label class="form-label-sm">Author</label>
+          <input type="text" name="author" class="form-input-sm" placeholder="Author name" required/>
+        </div>
+        <div>
+          <label class="form-label-sm">Category</label>
+          <select name="category" class="form-input-sm">
+            <option>Programming</option>
+            <option>Computer Science</option>
+            <option>Database</option>
+            <option>Networking</option>
+            <option>AI/ML</option>
+            <option>Mathematics</option>
+            <option>Software Engineering</option>
+            <option>General</option>
+          </select>
+        </div>
+        <div class="d-flex align-items-end">
+          <button type="submit" class="btn-primary-sm w-100">
+            <i class="fas fa-plus"></i> Add Book
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- ─── SEARCH + FILTER ─── -->
+<div class="card-pro mb-4">
+  <form action="{{ url_for('books') }}" method="GET" class="search-filter-bar">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" name="q" value="{{ search }}"
+             placeholder="Search by title or author…" class="search-input"/>
+    </div>
+    <select name="category" class="form-input-sm" style="max-width:180px">
+      <option value="">All Categories</option>
+      {% for c in categories %}
+        <option value="{{ c }}" {% if cat == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-primary-sm">
+      <i class="fas fa-filter"></i> Filter
+    </button>
+    {% if search or cat %}
+      <a href="{{ url_for('books') }}" class="btn-secondary-sm">
+        <i class="fas fa-times"></i> Clear
+      </a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- ─── BOOKS TABLE ─── -->
+<div class="card-pro">
+  <div class="card-pro-header">
+    <span>
+      <i class="fas fa-book me-2"></i>Books
+      <span class="badge bg-secondary ms-1">{{ total }}</span>
+    </span>
+    <span class="text-muted small">
+      Page {{ page }} of {{ total_pages }}
+    </span>
+  </div>
+
+  {% if books %}
+  <div class="table-responsive">
+    <table class="table-pro">
+      <thead>
+        <tr>
+          <th>#ID</th>
+          <th>Title</th>
+          <th>Author</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Issued To</th>
+          <th>Due Date</th>
+          <th>Fine</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for book in books %}
+        <tr class="book-row" data-book-id="{{ book.id }}">
+          <td><code>#{{ book.id }}</code></td>
+
+          <td>
+            <div class="book-title-cell">
+              <strong>{{ book.title }}</strong>
+              {% if book.vip %}<span class="badge-role vip">VIP</span>{% endif %}
+            </div>
+          </td>
+
+          <td class="text-muted">{{ book.author }}</td>
+
+          <td><span class="cat-chip">{{ book.category }}</span></td>
+
+          <td>
+            {% if book.issued %}
+              <span class="badge-status active">Issued</span>
+            {% else %}
+              <span class="badge-status returned">Available</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if book.issued %}
+              <div class="student-cell">
+                <span class="student-name">{{ book.student_name }}</span>
+                <span class="student-id text-muted">{{ book.student_id }}</span>
+              </div>
+            {% else %}—{% endif %}
+          </td>
+
+          <td>
+            {% if book.issued and book.due_date != '-' %}
+              <span class="{% if book.fine > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">
+                {{ book.due_date }}
+              </span>
+            {% else %}—{% endif %}
+          </td>
+
+          <td>
+            {% if book.fine > 0 %}
+              <span class="fine-badge">₹{{ "%.2f"|format(book.fine) }}</span>
+            {% else %}—{% endif %}
+          </td>
+
+          <td>
+            <div class="action-btns">
+              <!-- Recommend -->
+              <button class="btn-icon-sm" title="Recommendations"
+                      onclick="loadRecommendations({{ book.id }}, '{{ book.title }}')">
+                <i class="fas fa-magic"></i>
+              </button>
+              {% if session.role == 'admin' %}
+              <!-- Delete -->
+              <form action="{{ url_for('delete_book') }}" method="POST"
+                    onsubmit="return confirm('Delete this book?')">
+                <input type="hidden" name="book_id" value="{{ book.id }}"/>
+                <button type="submit" class="btn-icon-sm danger" title="Delete">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  {% if total_pages > 1 %}
+  <div class="pagination-bar">
+    {% if page > 1 %}
+      <a href="?page={{ page-1 }}&q={{ search }}&category={{ cat }}" class="page-btn">
+        <i class="fas fa-chevron-left"></i>
+      </a>
+    {% endif %}
+
+    {% for p in range(1, total_pages+1) %}
+      <a href="?page={{ p }}&q={{ search }}&category={{ cat }}"
+         class="page-btn {% if p == page %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+
+    {% if page < total_pages %}
+      <a href="?page={{ page+1 }}&q={{ search }}&category={{ cat }}" class="page-btn">
+        <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+    <div class="empty-state">
+      <i class="fas fa-book-open"></i>
+      <h5>No books found</h5>
+      <p>{% if search %}Try a different search term.{% else %}Add your first book above.{% endif %}</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- ─── RECOMMENDATIONS MODAL ─── -->
+<div class="modal fade" id="recommendModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content modal-pro">
+      <div class="modal-header-pro">
+        <h5><i class="fas fa-magic me-2"></i>AI Recommendations</h5>
+        <button type="button" class="btn-close-pro" data-bs-dismiss="modal">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body-pro" id="recommendBody">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i> Finding similar books…
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function loadRecommendations(bookId, bookTitle) {
+  const modal = new bootstrap.Modal(document.getElementById('recommendModal'));
+  const body  = document.getElementById('recommendBody');
+  body.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Finding similar books…</div>';
+  modal.show();
+
+  fetch(`/recommend/${bookId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data || data.length === 0) {
+        body.innerHTML = '<div class="empty-state small-empty"><i class="fas fa-robot"></i><p>No recommendations yet — add more books in the same category!</p></div>';
+        return;
+      }
+      let html = `<p class="text-muted mb-3">Books similar to <strong>${bookTitle}</strong> (Graph BFS):</p>
+                  <div class="rec-grid">`;
+      data.forEach(b => {
+        html += `<div class="rec-card">
+                   <div class="rec-icon"><i class="fas fa-book"></i></div>
+                   <div class="rec-info">
+                     <strong>${b.title}</strong>
+                     <span class="text-muted">${b.author}</span>
+                     <span class="cat-chip mt-1">${b.category}</span>
+                   </div>
+                 </div>`;
+      });
+      html += '</div>';
+      body.innerHTML = html;
+    })
+    .catch(() => {
+      body.innerHTML = '<div class="empty-state small-empty"><i class="fas fa-exclamation-triangle"></i><p>Could not load recommendations.</p></div>';
+    });
+}
+</script>
+{% endblock %}

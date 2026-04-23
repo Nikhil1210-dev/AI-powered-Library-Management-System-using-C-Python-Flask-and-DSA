@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Issue Book — LibraryPro{% endblock %}
+{% block page_title %}Issue Book{% endblock %}
+{% block content %}
+<div class="two-col-grid">
+
+  <!-- ISSUE FORM -->
+  <div class="card-pro">
+    <div class="card-pro-header">
+      <span><i class="fas fa-arrow-right-from-bracket me-2 text-warning"></i>Issue a Book</span>
+    </div>
+
+    <form action="{{ url_for('issue_book') }}" method="POST" class="form-pro">
+
+      <div class="form-group-pro">
+        <label>Book ID <span class="required">*</span></label>
+        <div class="input-icon">
+          <i class="fas fa-hashtag"></i>
+          <input type="number" name="book_id" class="form-input" placeholder="Enter book ID" required/>
+        </div>
+      </div>
+
+      <div class="form-group-pro">
+        <label>Select from Available Books</label>
+        <select class="form-input" onchange="document.querySelector('[name=book_id]').value=this.value">
+          <option value="">— Quick select —</option>
+          {% for book in books %}
+            {% if not book.issued %}
+            <option value="{{ book.id }}">
+              #{{ book.id }} — {{ book.title }} ({{ book.author }})
+            </option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group-pro">
+        <label>Student Name <span class="required">*</span></label>
+        <div class="input-icon">
+          <i class="fas fa-user-graduate"></i>
+          <input type="text" name="student_name" class="form-input" placeholder="Full name" required/>
+        </div>
+      </div>
+
+      <div class="form-group-pro">
+        <label>Student ID <span class="required">*</span></label>
+        <div class="input-icon">
+          <i class="fas fa-id-badge"></i>
+          <input type="text" name="student_id" class="form-input" placeholder="Roll number / ID" required/>
+        </div>
+      </div>
+
+      <div class="form-check-custom">
+        <input type="checkbox" id="vip" name="vip" class="form-check-input"/>
+        <label for="vip">
+          <i class="fas fa-star text-warning"></i>
+          VIP / Faculty (Priority Queue — gets next available copy first)
+        </label>
+      </div>
+      <div class="info-box mt-3">
+        <i class="fas fa-circle-info"></i>
+        <span>Due date will be set to <strong>14 days</strong> from today.
+              Late returns incur ₹2/day fine.</span>
+      </div>
+      <button type="submit" class="btn-primary-lg mt-4">
+        <i class="fas fa-arrow-right-from-bracket"></i> Issue Book
+      </button>
+    </form>
+  </div>
+
+  <!-- CURRENTLY ISSUED -->
+  <div class="card-pro">
+    <div class="card-pro-header">
+      <span><i class="fas fa-bookmark me-2 text-danger"></i>Currently Issued</span>
+    </div>
+    {% set issued_books = books | selectattr('issued', 'equalto', 1) | list %}
+    {% if issued_books %}
+    <div class="table-responsive">   
+      <table class="table-pro">
+        <thead><tr><th>ID</th><th>Title</th><th>Student</th><th>Due</th></tr></thead>
+        <tbody>                   
+          {% for book in issued_books %}
+          <tr>
+            <td><code>#{{ book.id }}</code></td>
+            <td>{{ book.title }}</td>
+            <td>{{ book.student_name }}</td>
+            <td class="{% if book.fine > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">
+              {{ book.due_date }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="empty-state small-empty">
+        <i class="fas fa-check-circle text-success"></i>
+        <p>No books currently issued</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

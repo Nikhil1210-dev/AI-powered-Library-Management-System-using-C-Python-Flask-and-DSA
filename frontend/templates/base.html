@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}LibraryPro{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- Font Awesome 6 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <!-- Custom CSS -->
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet"/>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+<!-- ═══════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <i class="fas fa-book-open"></i>
+      <span class="logo-text">LibraryPro</span>
+    </div>
+    <button class="sidebar-toggle-btn d-lg-none" id="sidebarClose">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">
+      {{ session.full_name[0]|upper if session.full_name else 'U' }}
+    </div>
+    <div class="user-info">
+      <div class="user-name">{{ session.full_name or 'User' }}</div>
+      <div class="user-role">
+        {% if session.role == 'admin' %}
+          <span class="badge-role admin">Admin</span>
+        {% else %}
+          <span class="badge-role student">Student</span>
+        {% endif %}
+        {% if session.is_vip %}
+          <span class="badge-role vip">VIP</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Main</div>
+    <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}">
+      <i class="fas fa-gauge-high"></i><span>Dashboard</span>
+    </a>
+    <a href="{{ url_for('books') }}" class="nav-link {% if request.endpoint=='books' %}active{% endif %}">
+      <i class="fas fa-book"></i><span>Books</span>
+    </a>
+    <a href="{{ url_for('issue_book') }}" class="nav-link {% if request.endpoint=='issue_book' %}active{% endif %}">
+      <i class="fas fa-arrow-right-from-bracket"></i><span>Issue Book</span>
+    </a>
+    <a href="{{ url_for('return_book') }}" class="nav-link {% if request.endpoint=='return_book' %}active{% endif %}">
+      <i class="fas fa-rotate-left"></i><span>Return Book</span>
+    </a>
+
+    <div class="nav-section-label">Data Structures</div>
+    <a href="{{ url_for('queue_page') }}" class="nav-link {% if request.endpoint=='queue_page' %}active{% endif %}">
+      <i class="fas fa-layer-group"></i><span>Waiting Queue</span>
+    </a>
+    <a href="{{ url_for('stack_page') }}" class="nav-link {% if request.endpoint=='stack_page' %}active{% endif %}">
+      <i class="fas fa-clock-rotate-left"></i><span>Return History</span>
+    </a>
+
+    {% if session.role == 'admin' %}
+    <div class="nav-section-label">Admin</div>
+    <a href="{{ url_for('analytics') }}" class="nav-link {% if request.endpoint=='analytics' %}active{% endif %}">
+      <i class="fas fa-chart-bar"></i><span>Analytics</span>
+    </a>
+    <a href="{{ url_for('students') }}" class="nav-link {% if request.endpoint=='students' %}active{% endif %}">
+      <i class="fas fa-users"></i><span>Students</span>
+    </a>
+    <a href="{{ url_for('transactions') }}" class="nav-link {% if request.endpoint=='transactions' %}active{% endif %}">
+      <i class="fas fa-receipt"></i><span>Transactions</span>
+    </a>
+    {% endif %}
+
+    <div class="nav-section-label">Account</div>
+    <a href="{{ url_for('profile') }}" class="nav-link {% if request.endpoint=='profile' %}active{% endif %}">
+      <i class="fas fa-user-circle"></i><span>My Profile</span>
+    </a>
+    <a href="{{ url_for('logout') }}" class="nav-link logout-link">
+      <i class="fas fa-right-from-bracket"></i><span>Logout</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- Overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ═══════════════════════════════════════
+     MAIN CONTENT
+═══════════════════════════════════════ -->
+<main class="main-content" id="mainContent">
+
+  <!-- TOP NAVBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="sidebar-toggle-btn" id="sidebarOpen">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="breadcrumb-area">
+        <span class="page-title">{% block page_title %}Dashboard{% endblock %}</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <!-- Search -->
+      <form action="{{ url_for('books') }}" method="get" class="topbar-search">
+        <i class="fas fa-search"></i>
+        <input type="text" name="q" placeholder="Search books..." autocomplete="off"/>
+      </form>
+
+      <!-- Notifications -->
+      <div class="notif-btn" id="notifBtn">
+        <i class="fas fa-bell"></i>
+        {% if notif_count > 0 %}
+          <span class="notif-badge">{{ notif_count }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Dark Mode Toggle -->
+      <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">
+        <i class="fas fa-moon" id="themeIcon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- FLASH MESSAGES -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash-msg flash-{{ category }}">
+            <i class="fas fa-{% if category=='success' %}check-circle{% elif category=='danger' %}exclamation-circle{% elif category=='warning' %}triangle-exclamation{% else %}info-circle{% endif %}"></i>
+            {{ message }}
+            <button class="flash-close">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- PAGE CONTENT -->
+  <div class="page-content">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="page-footer">
+    <span>LibraryPro &copy; {{ current_year }}</span>
+    <span>Built with C++ · Flask · MySQL · Chart.js</span>
+  </footer>
+</main>
+
+<!-- Notification Panel -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-header">
+    <span>Notifications</span>
+    <button id="markAllRead" class="btn-link-sm">Mark all read</button>
+  </div>
+  <div class="notif-list" id="notifList">
+    {% if notifications %}
+      {% for n in notifications %}
+        <div class="notif-item">
+          <i class="fas fa-circle-info"></i>
+          <div>
+            <p>{{ n.message }}</p>
+            <small>{{ n.created_at.strftime('%b %d, %Y %H:%M') if n.created_at else '' }}</small>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="notif-empty">
+        <i class="fas fa-check-circle"></i>
+        <p>All caught up!</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>
