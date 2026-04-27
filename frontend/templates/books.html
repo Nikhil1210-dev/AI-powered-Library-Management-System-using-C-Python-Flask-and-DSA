@@ -17,29 +17,30 @@
     <form action="{{ url_for('add_book') }}" method="POST" class="inline-form">
       <div class="form-row-5">
         <div>
-          <label class="form-label-sm">Book ID</label>
-          <input type="number" name="book_id" class="form-input-sm" placeholder="e.g. 101" required/>
+          <label class="form-label-sm">Category <span class="required">*</span></label>
+          <select name="category" class="form-input-sm" required>
+            <option value="">-- Select --</option>
+            <option value="Programming">Programming (1xx)</option>
+            <option value="Computer Science">Computer Science (2xx)</option>
+            <option value="Database">Database (3xx)</option>
+            <option value="Networking">Networking (4xx)</option>
+            <option value="AI/ML">AI/ML (5xx)</option>
+            <option value="Mathematics">Mathematics (6xx)</option>
+            <option value="Software Engineering">Software Engineering (7xx)</option>
+            <option value="General">General (8xx)</option>
+          </select>
         </div>
         <div>
-          <label class="form-label-sm">Title</label>
+          <label class="form-label-sm">Book ID <span class="text-muted">AUTO</span></label>
+          <input type="text" class="form-input-sm" placeholder="Auto" disabled/>
+        </div>
+        <div>
+          <label class="form-label-sm">Title <span class="required">*</span></label>
           <input type="text" name="title" class="form-input-sm" placeholder="Book title" required/>
         </div>
         <div>
-          <label class="form-label-sm">Author</label>
+          <label class="form-label-sm">Author <span class="required">*</span></label>
           <input type="text" name="author" class="form-input-sm" placeholder="Author name" required/>
-        </div>
-        <div>
-          <label class="form-label-sm">Category</label>
-          <select name="category" class="form-input-sm">
-            <option>Programming</option>
-            <option>Computer Science</option>
-            <option>Database</option>
-            <option>Networking</option>
-            <option>AI/ML</option>
-            <option>Mathematics</option>
-            <option>Software Engineering</option>
-            <option>General</option>
-          </select>
         </div>
         <div class="d-flex align-items-end">
           <button type="submit" class="btn-primary-sm w-100">

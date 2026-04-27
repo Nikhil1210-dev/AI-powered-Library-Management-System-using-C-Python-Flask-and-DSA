@@ -169,15 +169,17 @@ def books():
 @app.route('/add_book',methods=['POST'])
 @admin_required
 def add_book():
-    bid=request.form.get('book_id','').strip(); title=request.form.get('title','').strip()
+    title=request.form.get('title','').strip()
     auth=request.form.get('author','').strip(); cat=request.form.get('category','General').strip()
-    if not all([bid,title,auth]): flash('All fields required.','danger'); return redirect(url_for('books'))
+    if not all([title,auth]): flash('All fields required.','danger'); return redirect(url_for('books'))
     try:
         conn=get_db(); cur=conn.cursor()
-        cur.execute("INSERT INTO books(id,title,author,category) VALUES(%s,%s,%s,%s)",(bid,title,auth,cat))
-        conn.commit(); cur.close(); conn.close()
+        cur.execute("INSERT INTO books(title,author,category) VALUES(%s,%s,%s)",(title,auth,cat))
+        conn.commit()
+        bid = cur.lastrowid  # Get the auto-generated ID
+        cur.close(); conn.close()
     except Exception as e: flash(f'DB: {e}','danger'); return redirect(url_for('books'))
-    run_cpp(['add',bid,title,auth,cat])
+    run_cpp(['add',str(bid),title,auth,cat])
     flash(f'Book "{title}" added! 📚','success'); return redirect(url_for('books'))
 
 @app.route('/delete_book',methods=['POST'])
@@ -341,7 +343,7 @@ def profile():
         mb=cur.fetchall(); cur.close(); conn.close()
     except: mb=[]
     tf=sum(calc_fine(t['due_date']) for t in mb if t['status']=='active')
-    return render_template('profile.html',my_books=mb,total_fine=tf,notifications=get_notifs(session['user_id']))
+    return render_template('profile.html',my_books=mb,total_fine=tf,today_date=str(date.today()),notifications=get_notifs(session['user_id']))
 
 @app.route('/notifications/mark_read',methods=['POST'])
 @login_required

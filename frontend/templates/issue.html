@@ -13,17 +13,12 @@
     <form action="{{ url_for('issue_book') }}" method="POST" class="form-pro">
 
       <div class="form-group-pro">
-        <label>Book ID <span class="required">*</span></label>
-        <div class="input-icon">
-          <i class="fas fa-hashtag"></i>
-          <input type="number" name="book_id" class="form-input" placeholder="Enter book ID" required/>
-        </div>
-      </div>
-
-      <div class="form-group-pro">
-        <label>Select from Available Books</label>
-        <select class="form-input" onchange="document.querySelector('[name=book_id]').value=this.value">
-          <option value="">— Quick select —</option>
+        <label>Select Available Book <span class="required">*</span></label>
+        <span class="label-hint text-success">
+          <i class="fas fa-circle-check"></i> Only available books shown
+        </span>
+        <select class="form-input" name="book_id" required>
+          <option value="">-- Select a Book --</option>
           {% for book in books %}
             {% if not book.issued %}
             <option value="{{ book.id }}">
